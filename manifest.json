@@ -2,9 +2,10 @@
   "schemaVersion": 1,
   "id": "andrewf.keyboard-idle",
   "name": "Keyboard Backlight Idle",
-  "version": "1.0.0",
-  "author": "Andrew",
-  "description": "Turns off the keyboard backlight after 10 seconds without input and restores it on activity.",
+  "version": "1.1.0",
+  "author": "Andrii F",
+  "license": "MIT",
+  "description": "Turns off the keyboard backlight after a configurable idle timeout and restores it on activity.",
   "kinds": [
     "service"
   ],
