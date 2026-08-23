@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "andrewf.keyboard-idle",
-  "name": "Keyboard Backlight Idle",
+  "name": "Keyboard Backlight Idle Auto-Off",
   "version": "1.1.0",
   "author": "Andrii F",
   "license": "MIT",

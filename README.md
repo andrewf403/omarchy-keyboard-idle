@@ -1,4 +1,4 @@
-# Keyboard Backlight Idle
+# Keyboard Backlight Idle Auto-Off
 
 An [Omarchy](https://omarchy.org/) Quattro shell service that turns off the
 keyboard backlight after a configurable period without keyboard or pointer
