@@ -20,8 +20,6 @@ or privileged setup steps. The plugin runs inside the existing unsandboxed
 - `omarchy brightness keyboard off`
 - `omarchy brightness keyboard restore`
 
-No `sudo` or `pkexec` access is required.
-
 ## Install
 
 ```sh
