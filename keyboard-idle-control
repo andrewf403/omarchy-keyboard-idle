@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+action=${1:-}
+case $action in
+  off|restore) ;;
+  *) echo "Usage: $0 {off|restore}" >&2; exit 2 ;;
+esac
+
+runtime_dir=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+state_dir=$runtime_dir/andrewf.keyboard-idle
+state_file=$state_dir/brightness
+leds_dir=${KEYBOARD_IDLE_LEDS_DIR:-/sys/class/leds}
+
+mkdir -p -m 700 "$state_dir"
+exec 9>"$state_dir/lock"
+flock -x 9
+
+if [[ $action == restore ]]; then
+  [[ -f $state_file ]] || exit 0
+  device=""
+  brightness=""
+  read -r device brightness <"$state_file" || true
+  if [[ $device != *kbd_backlight* || ! $brightness =~ ^[0-9]+$ ]]; then
+    echo "Invalid saved keyboard brightness state" >&2
+    exit 1
+  fi
+
+  brightnessctl -d "$device" set "$brightness" >/dev/null
+  rm -f "$state_file"
+  exit 0
+fi
+
+# An existing record belongs to an earlier shell instance. Never replace its
+# original brightness with the current (usually zero) value.
+[[ -f $state_file ]] && exit 0
+
+device=""
+for candidate in "$leds_dir"/*kbd_backlight*; do
+  if [[ -e $candidate ]]; then
+    device=${candidate##*/}
+    break
+  fi
+done
+if [[ -z $device ]]; then
+  echo "No keyboard backlight device found" >&2
+  exit 1
+fi
+
+brightness=$(brightnessctl -d "$device" get)
+[[ $brightness =~ ^[0-9]+$ ]] || exit 1
+(( brightness > 0 )) || exit 0
+
+umask 077
+temporary_state=$state_file.$$
+trap 'rm -f "$temporary_state"' EXIT
+printf '%s %s\n' "$device" "$brightness" >"$temporary_state"
+mv -f "$temporary_state" "$state_file"
+brightnessctl -d "$device" set 0 >/dev/null

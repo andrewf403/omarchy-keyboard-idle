@@ -11,14 +11,20 @@ lock, display-power, or suspend timings.
 ## Requirements
 
 - Omarchy with the Quattro shell plugin runtime
-- A keyboard backlight supported by Omarchy's keyboard-brightness commands
+- A keyboard backlight supported by `brightnessctl`
 
-There are no external packages, installers, background services, remote builds,
-or privileged setup steps. The plugin runs inside the existing unsandboxed
-`omarchy-shell` process with the current user's permissions. It only invokes:
+There are no installers, background services, remote builds, or privileged setup
+steps. The plugin runs inside the existing unsandboxed `omarchy-shell` process
+with the current user's permissions. Its bundled helper uses `brightnessctl`
+and `flock`, both provided by Omarchy.
 
-- `omarchy brightness keyboard off`
-- `omarchy brightness keyboard restore`
+The helper saves the original brightness under `$XDG_RUNTIME_DIR` before turning
+the keyboard light off. Repeated idle events, shell reloads, and suspend/resume
+cannot overwrite that saved value with zero. The state lasts for the login
+session and is removed after a successful restore.
+
+If you turn the backlight off yourself before the idle timeout, later mouse
+activity leaves it off.
 
 ## Install
 
@@ -74,12 +80,11 @@ Unchanged values do not need to appear in `shell.json`.
 ## Remove
 
 ```sh
+bash ~/.config/omarchy/plugins/andrewf.keyboard-idle/keyboard-idle-control restore
 omarchy plugin remove andrewf.keyboard-idle
-omarchy brightness keyboard restore
 ```
 
-The explicit restore leaves the keyboard backlight in its saved state even if
-the plugin is removed while the keyboard is idle.
+Restore the backlight before removing the plugin if it is currently idle.
 
 ## Development
 
@@ -88,6 +93,7 @@ Validate the repository and QML before publishing changes:
 ```sh
 omarchy plugin validate .
 qmllint -I "$OMARCHY_PATH/shell" Service.qml
+bash tests/keyboard-idle-control.sh
 ```
 
 ## License

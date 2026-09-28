@@ -8,7 +8,11 @@ Item {
 
   property var shell: null
   property var manifest: null
-  property bool restorePending: false
+  property string pendingAction: ""
+  property string runningAction: ""
+
+  readonly property string controlScript: decodeURIComponent(
+    String(Qt.resolvedUrl("keyboard-idle-control")).replace(/^file:\/\//, ""))
 
   readonly property string pluginId: manifest && manifest.id
     ? String(manifest.id)
@@ -63,23 +67,29 @@ Item {
       timeout: timeoutSeconds,
       respectInhibitors: respectInhibitors,
       idle: idleMonitor.isIdle,
-      offProcessRunning: offProcess.running,
-      restoreProcessRunning: restoreProcess.running
+      offProcessRunning: controlProcess.running && runningAction === "off",
+      restoreProcessRunning: controlProcess.running && runningAction === "restore",
+      runningAction: controlProcess.running ? runningAction : ""
     })
   }
 
-  function turnOff() {
-    restorePending = false
-    if (!offProcess.running) offProcess.running = true
+  function requestState(off) {
+    pendingAction = off ? "off" : "restore"
+    dispatch()
   }
 
-  function restore() {
-    if (offProcess.running) {
-      restorePending = true
-    } else if (!restoreProcess.running) {
-      restoreProcess.running = true
-    }
+  function dispatch() {
+    if (controlProcess.running || !pendingAction) return
+
+    runningAction = pendingAction
+    pendingAction = ""
+    controlProcess.command = ["bash", controlScript, runningAction]
+    controlProcess.running = true
   }
+
+  Component.onCompleted: Qt.callLater(function() {
+    root.requestState(root.monitorEnabled && idleMonitor.isIdle)
+  })
 
   IdleMonitor {
     id: idleMonitor
@@ -89,29 +99,16 @@ Item {
     // Keyboard lighting should turn off even while media inhibits normal idle actions.
     respectInhibitors: root.respectInhibitors
 
-    onEnabledChanged: if (!enabled) root.restore()
+    onEnabledChanged: root.requestState(enabled && isIdle)
 
     onIsIdleChanged: {
-      if (isIdle) root.turnOff()
-      else root.restore()
+      root.requestState(root.monitorEnabled && isIdle)
     }
   }
 
   Process {
-    id: offProcess
-    command: ["omarchy", "brightness", "keyboard", "off"]
-
-    onExited: {
-      if (root.restorePending) {
-        root.restorePending = false
-        root.restore()
-      }
-    }
-  }
-
-  Process {
-    id: restoreProcess
-    command: ["omarchy", "brightness", "keyboard", "restore"]
+    id: controlProcess
+    onExited: Qt.callLater(root.dispatch)
   }
 
   IpcHandler {

@@ -2,14 +2,13 @@
   "schemaVersion": 1,
   "id": "andrewf.keyboard-idle",
   "name": "Keyboard Backlight Idle Auto-Off",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Andrii F",
   "license": "MIT",
   "description": "Turns off the keyboard backlight after a configurable idle timeout and restores it on activity.",
   "kinds": [
     "service"
   ],
-  "keepLoaded": true,
   "entryPoints": {
     "service": "Service.qml"
   }
